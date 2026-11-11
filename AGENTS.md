@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | [`sources`](internal/sources/AGENTS.md) | 更高的来源进来（LY02–LY05）：依据与撤回、票据确认与冲回，折成本位币后交给 `layers` | — |
 | [`sequence`](internal/sequence/AGENTS.md) | 计价序列（VS01–VS05）：收流水、按序计价、缺口补取、纪元；计价进度的查询 | `scope`、`movement_in`、`valued_movement` |
-| [`issues`](internal/issues/AGENTS.md) | 出库与退货的成本（IS01、IS02、RT01） | — |
+| [`issues`](internal/issues/AGENTS.md) | 出库、采购退货、补平的成本（IS01、IS02、RT01）；系统面 `LayerService.ReturnLimit` | — |
 | [`layers`](internal/layers/AGENTS.md) | 成本层与单价来源（LY01–LY05）、政策价、调整（AD01） | `cost_layer`、`layer_source`、`basis`、`basis_withdrawal`、`confirmation`、`confirmation_match`、`reversal` |
 | [`methods`](internal/methods/AGENTS.md) | 计价方法的不同之处（IS01、AD02）：纯算术，换方法的替换点 | — |
 | [`policies`](internal/policies/AGENTS.md) | 计价政策（PO01） | `policy` |
@@ -29,7 +29,7 @@
 
 模块共用的（不属于某一个业务）：[`masterdata`](internal/masterdata/AGENTS.md)（事务外取证：法人与本位币、币种的小数位、库存的补取）、[`core`](internal/core/AGENTS.md)（名字、资源与操作的定义、错误与校验、生命周期表的通用写法、增量事实 `Fact`、配置）。
 
-**实现进度**（还没发布）：P3a 骨架；P3b 计价政策、计价序列（含等依据、政策价、移动平均出库）、计价进度的查询；P3c 来源替换与调整（依据、外币折算、票据确认与冲回、撤回）。先进先出与采购退货、其余查询随 P3e 起的子步加入，还没做的路由答“能力不支持”。加一个模块就在上面两张表里加一行。
+**实现进度**（还没发布）：P3a 骨架；P3b 计价政策、计价序列（含等依据、政策价、移动平均出库）、计价进度的查询；P3c 来源替换与调整（依据、外币折算、票据确认与冲回、撤回）；P3e 先进先出、采购退货与可退数量、补平。成本层与成本事实的查询、恢复检查随 P3f 加入，还没做的路由答“能力不支持”。加一个模块就在上面两张表里加一行。
 
 | 想改 | 从这里开始 | 然后 |
 | --- | --- | --- |

@@ -50,6 +50,12 @@ func MethodOf(ctx context.Context, tx db.Tx, le string) (string, error) {
 	return p.Method, err
 }
 
+// MethodRead is the legal entity's method for a read (nothing locked, nothing written).
+func MethodRead(ctx context.Context, tx db.Tx, le string) (string, error) {
+	p, err := read(ctx, tx, le, "")
+	return p.Method, err
+}
+
 // GetPolicy answers a legal entity's policy; a legal entity mdm/org does not know is refused.
 func GetPolicy(m *core.Base, c *httpx.Context) error {
 	le := c.Param("legal_entity_id")

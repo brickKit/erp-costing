@@ -177,11 +177,15 @@ func valueNext(m *core.Base, ctx context.Context, tx db.Tx, s *state, factID str
 	case core.KindReceipt:
 		var source string
 		var wait bool
+		before, beforeValue := s.Quantity, s.Value
 		if cost, source, wait, err = layers.Receive(m, ctx, tx, &s.Scope, mv, s.basisDue); err != nil {
 			return idle, err
 		}
 		if wait {
 			return idle, waitFor(m, ctx, tx, s, AwaitBasis, m.BasisWait)
+		}
+		if err := issues.Level(m, ctx, tx, &s.Scope, mv, before, beforeValue); err != nil { // IS02
+			return idle, err
 		}
 		if s.State == WaitingBasis {
 			command = BasisDue

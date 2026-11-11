@@ -14,17 +14,18 @@
 | `layers.go` | 来源 `SourcePolicy`、`SourceBasis`、`SourceInvoice`；`RegisterBasis`；`PolicyPrice`；`Receive`（入层，范围的数量与价值随之变，发 `inventory_receipt`） |
 | `units.go` | 层与它有效的来源（`load`）：现在的最高来源 `state`、没开票的单位 `uncovered`、`take`、`value`、`addInvoice`、`setBase`、`save`（加权单价与最高来源） |
 | `sources.go` | `RegisterWithdrawal`（LY05）、`RegisterConfirmation`、`RegisterReversal`、`BasisByLine`、`ConvertBasis`、`LockConfirmation`、`ConvertConfirmation`、`MatchesOf`、`MarkReversed`、`ReversalOf`；`ApplyBasis`、`ApplyConfirm`、`ApplyReverse`；`applyPending`（新层接挂起的确认）；`adjust`（AD01） |
+| `take.go` | 单位从层的前面离开：`rangeValue`、`takeFront`（记 `issue_layer`）、`TakeOldest`（先进先出出库）、`OriginOf`、`TakeFromLayer`（先进先出的退货与补平）、`MarkGone`（移动平均的退货） |
 | `lifecycle.go` | 成本层单价来源的表（`core.Table`）：状态 `policy`、`basis`、`invoice`，命令 `basis`、`withdraw`、`confirm`、`reverse` |
 | `lifecycle_test.go` | 单元测试：表的每格完整、与设计逐格相同、每条规则有集成测试提到 |
 
 ## 依赖与被依赖
 
 - 依赖：`core`、`facts`、`methods`。
-- 被依赖：`issues`（政策价）、`sequence`（入层）、`sources`（来源）。
+- 被依赖：`issues`（政策价、取单位）、`sequence`（入层）、`sources`（来源）。
 
 ## 表
 
-`cost_layer`、`layer_source`、`basis`、`basis_withdrawal`、`confirmation`、`confirmation_match`、`reversal`。
+`cost_layer`、`layer_source`、`issue_layer`、`basis`、`basis_withdrawal`、`confirmation`、`confirmation_match`、`reversal`。
 
 ## 规则在哪
 

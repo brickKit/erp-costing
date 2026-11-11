@@ -46,6 +46,7 @@ const (
 	RuleReceipt     = "inventory_receipt"    // inventory debit, grni credit
 	RuleCostOfSales = "cost_of_sales"        // cost_of_sales debit, inventory credit
 	RuleReturn      = "inventory_return"     // grni debit, inventory credit
+	RuleCostReturn  = "cost_of_sales_return" // inventory debit, cost_of_sales credit
 	RuleAdjustUp    = "cost_adjustment_up"   // inventory and variance debit, grni credit
 	RuleAdjustDown  = "cost_adjustment_down" // grni debit, inventory and variance credit
 	RoleVariance    = "variance"

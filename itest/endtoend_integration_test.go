@@ -84,6 +84,8 @@ func TestCostingEndToEnd(t *testing.T) {
 	fx.unknownKind()
 	fx.epochs()
 	fx.sources()
+	fx.fifo()
+	fx.returns()
 	fx.policyInUse()
 }
 

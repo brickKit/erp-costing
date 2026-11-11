@@ -99,6 +99,8 @@ func CmpEpoch(a, b string) int {
 const (
 	// FactValued: a movement's valuation (receipt, issue, purchase return)
 	FactValued = "valued"
+	// FactLevelled: a receipt levelling a stock below zero (IS02)
+	FactLevelled = "levelled"
 	// FactReplaced: a source replacing a layer's price (with the layer's movement and the source's fact)
 	FactReplaced = "replaced"
 	// FactReversed: an invoice's contribution taken back (with the layer's movement and the confirmation)

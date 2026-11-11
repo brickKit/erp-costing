@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | `sources` | 更高的来源进来：依据与撤回、票据确认与冲回；折成本位币后交给 `layers` | `core`、`masterdata`、`policies`、`layers`、`sequence` |
 | `sequence` | 计价序列：收流水、按序号一条一条计价、缺口补取、纪元、停下；计价进度的生命周期与查询 | `core`、`masterdata`、`policies`、`layers`、`issues` |
-| `issues` | 出库与退货的成本（移动平均；先进先出与采购退货随 P3e） | `core`、`facts`、`layers`、`methods` |
+| `issues` | 出库、采购退货、补平的成本；系统面的可退数量 | `core`、`facts`、`layers`、`methods`、`policies` |
 | `layers` | 成本层与单价来源：入层、政策价、来源的记录与替换、调整（AD01） | `core`、`facts`、`methods` |
 | `policies` | 计价政策：法人的计价方法 | `core`、`masterdata` |
 | `methods` | 计价方法的不同之处（纯算术）：移动平均出库取多少、调整怎样分（AD02） | `core` |
