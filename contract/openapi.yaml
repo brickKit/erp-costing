@@ -1,0 +1,563 @@
+openapi: 3.1.0
+info:
+  title: erp/costing user surface
+  version: 3.0.0
+  description: 'The value of stock (D46): each product and legal entity''s movements valued in erp/inventory''s valuation
+    sequence (protocol 05b), cost layers with their price sources (the policy price, erp/purchase''s valuation basis, erp/finance''s
+    price confirmation), the adjustments when a source is replaced, and the cost facts for erp/finance. Mostly reads: the
+    costing runs in the background from events. Every route needs a platform access token and the operation in x-operation;
+    what the caller may not see answers 404 (every resource carries the legal entity dimension). Errors are application/problem+json
+    with a reason. Lists page by cursor only (protocol 14). Amounts and quantities are decimal strings; amounts are in the
+    legal entity''s base currency. The cost facts are erp/finance''s shared accounting fact contract (events/); the read of
+    the incremental facts and a purchase return''s limit are on the system surface (proto).'
+paths:
+  /api/costing/policies/{legal_entity_id}:
+    parameters:
+    - &id003
+      name: legal_entity_id
+      in: path
+      required: true
+      schema: &id002
+        type: string
+        format: uuid
+    get:
+      operationId: getPolicy
+      x-operation: erp.costing.policy.read
+      summary: The legal entity's costing method (moving average when never set; PO01)
+      responses:
+        '200':
+          description: the policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        default: &id001
+          $ref: '#/components/responses/problem'
+    put:
+      operationId: setPolicy
+      x-operation: erp.costing.policy.manage
+      summary: The costing method, by version; refused with POLICY_IN_USE once a movement of the legal entity is valued (PO01)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyIn'
+      responses:
+        '200':
+          description: the policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        default: *id001
+  /api/costing/scopes:
+    get:
+      operationId: listScopes
+      x-operation: erp.costing.valuation.read
+      summary: One page of valuation scopes (product and legal entity) by legal entity and product
+      parameters:
+      - name: legal_entity_id
+        in: query
+        schema: *id002
+      - name: product_id
+        in: query
+        schema: *id002
+      - name: state
+        in: query
+        schema:
+          enum:
+          - running
+          - waiting_gap
+          - waiting_basis
+          - stopped
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: one page
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - scopes
+                - next_cursor
+                properties:
+                  scopes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Scope'
+                  next_cursor:
+                    type: string
+        default: *id001
+  /api/costing/scopes/{legal_entity_id}/{product_id}:
+    parameters:
+    - *id003
+    - name: product_id
+      in: path
+      required: true
+      schema: *id002
+    get:
+      operationId: getScope
+      x-operation: erp.costing.valuation.read
+      summary: 'A product''s valuation in a legal entity: its progress, the quantity and value in stock and, under FIFO, the
+        layers still in stock'
+      responses:
+        '200':
+          description: the valuation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Valuation'
+        default: *id001
+  /api/costing/layers:
+    get:
+      operationId: listLayers
+      x-operation: erp.costing.valuation.read
+      summary: One page of cost layers, newest first
+      parameters:
+      - name: legal_entity_id
+        in: query
+        schema: *id002
+      - name: product_id
+        in: query
+        schema: *id002
+      - name: source
+        in: query
+        schema:
+          enum:
+          - policy
+          - basis
+          - invoice
+        description: 'the highest source (policy: priced by the policy, pending)'
+      - name: in_stock
+        in: query
+        schema:
+          type: boolean
+        description: 'true: layers with quantity left in stock'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: one page
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - layers
+                - next_cursor
+                properties:
+                  layers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Layer'
+                  next_cursor:
+                    type: string
+        default: *id001
+  /api/costing/layers/{movement_id}:
+    parameters:
+    - name: movement_id
+      in: path
+      required: true
+      schema: *id002
+      description: 'the receipt movement''s fact_id (erp/inventory): a layer is one receipt movement'
+    get:
+      operationId: getLayer
+      x-operation: erp.costing.valuation.read
+      summary: A cost layer with its price sources
+      responses:
+        '200':
+          description: the layer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layer'
+        default: *id001
+  /api/costing/facts:
+    get:
+      operationId: listFacts
+      x-operation: erp.costing.valuation.read
+      summary: One page of the cost facts published, newest first
+      parameters:
+      - name: legal_entity_id
+        in: query
+        schema: *id002
+      - name: product_id
+        in: query
+        schema: *id002
+      - name: movement_id
+        in: query
+        schema: *id002
+      - name: rule_key
+        in: query
+        schema:
+          enum:
+          - inventory_receipt
+          - cost_of_sales
+          - inventory_return
+          - cost_adjustment_up
+          - cost_adjustment_down
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: one page
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - facts
+                - next_cursor
+                properties:
+                  facts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CostFact'
+                  next_cursor:
+                    type: string
+        default: *id001
+components:
+  parameters:
+    cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+  responses:
+    problem:
+      description: an error (application/problem+json with reason)
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            required:
+            - reason
+            properties:
+              reason:
+                type: string
+              detail:
+                type: string
+  schemas:
+    Decimal:
+      type: string
+      pattern: ^[0-9]+(\.[0-9]+)?$
+      description: a decimal string
+    Signed:
+      type: string
+      pattern: ^-?[0-9]+(\.[0-9]+)?$
+      description: a signed decimal string (a quantity in stock goes below zero when issues outran the valued receipts, IS02)
+    Policy:
+      type: object
+      additionalProperties: false
+      required:
+      - legal_entity_id
+      - method
+      - in_use
+      - version
+      properties:
+        legal_entity_id: *id002
+        method:
+          enum:
+          - moving_average
+          - fifo
+        in_use:
+          type: boolean
+          description: 'a movement of the legal entity is valued: the method no longer changes'
+        version:
+          type: integer
+          description: 0 when never set
+    PolicyIn:
+      type: object
+      additionalProperties: false
+      required:
+      - method
+      - version
+      properties:
+        method:
+          enum:
+          - moving_average
+          - fifo
+        version:
+          type: integer
+    Scope:
+      type: object
+      additionalProperties: false
+      required:
+      - legal_entity_id
+      - product_id
+      - method
+      - epoch
+      - next_seq
+      - state
+      - quantity
+      - value
+      - unit_cost
+      - currency
+      - waiting_since
+      - stopped_reason
+      - updated_at
+      properties:
+        legal_entity_id: *id002
+        product_id: *id002
+        method:
+          enum:
+          - moving_average
+          - fifo
+        epoch:
+          type: string
+          description: the valuation sequence's epoch being followed (<recovery generation>.<timeline>, protocol 14)
+        next_seq:
+          type: integer
+          description: the next sequence number to value
+        state:
+          enum:
+          - running
+          - waiting_gap
+          - waiting_basis
+          - stopped
+        quantity:
+          $ref: '#/components/schemas/Signed'
+        value:
+          $ref: '#/components/schemas/Signed'
+        unit_cost:
+          type:
+          - string
+          - 'null'
+          description: value ÷ quantity; null when nothing is in stock
+        currency:
+          type: string
+          description: the legal entity's base currency
+        waiting_since:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        stopped_reason:
+          type:
+          - string
+          - 'null'
+          description: 'why it stopped (VS05): a movement kind not known, an epoch not aligned'
+        updated_at:
+          type: string
+          format: date-time
+    Layer:
+      type: object
+      additionalProperties: false
+      required:
+      - movement_id
+      - legal_entity_id
+      - product_id
+      - receipt_line_id
+      - business_date
+      - quantity
+      - issued_quantity
+      - unit_cost
+      - value_in_stock
+      - source
+      - sources
+      properties:
+        movement_id: *id002
+        legal_entity_id: *id002
+        product_id: *id002
+        receipt_line_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: erp/purchase's receipt line (the valuation basis); null for other receipts
+        business_date:
+          type: string
+          format: date
+        quantity: &id004
+          $ref: '#/components/schemas/Decimal'
+        issued_quantity:
+          $ref: '#/components/schemas/Decimal'
+          description: issued and returned to the supplier
+        unit_cost:
+          type: string
+          description: the quantity-weighted unit cost of the layer's units
+        value_in_stock:
+          type: string
+          description: 'the value of the units still in stock (FIFO: those units'' own prices)'
+        source:
+          enum:
+          - policy
+          - basis
+          - invoice
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerSource'
+    LayerSource:
+      type: object
+      additionalProperties: false
+      required:
+      - kind
+      - fact_id
+      - quantity
+      - unit_price
+      - arrival
+      - state
+      properties:
+        kind:
+          enum:
+          - policy
+          - basis
+          - invoice
+        fact_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: the valuation basis or the price confirmation; null for the policy price
+        quantity: *id004
+        unit_price:
+          type: string
+          description: per base unit in the base currency, not rounded
+        arrival:
+          type: integer
+          description: the order it arrived in; invoices take the layer's units in this order (LY03)
+        state:
+          enum:
+          - active
+          - withdrawn
+          - reversed
+    CostFact:
+      type: object
+      additionalProperties: false
+      required:
+      - fact_id
+      - rule_key
+      - legal_entity_id
+      - product_id
+      - movement_id
+      - business_date
+      - currency
+      - amounts
+      - trigger
+      - recorded_at
+      properties:
+        fact_id: *id002
+        rule_key:
+          enum:
+          - inventory_receipt
+          - cost_of_sales
+          - inventory_return
+          - cost_adjustment_up
+          - cost_adjustment_down
+        legal_entity_id: *id002
+        product_id: *id002
+        movement_id:
+          type: string
+          format: uuid
+          description: 'the movement valued; an adjustment: the layer''s receipt movement'
+        business_date:
+          type: string
+          format: date
+        currency:
+          type: string
+        amounts:
+          type: object
+          additionalProperties: *id004
+          description: role → amount (the roles of the rule; a zero role is left out)
+        trigger:
+          type: object
+          additionalProperties: false
+          required:
+          - kind
+          - fact_id
+          properties:
+            kind:
+              enum:
+              - movement
+              - basis
+              - invoice
+              - reversal
+              - policy
+            fact_id:
+              type: string
+              format: uuid
+              description: 'the input that made it: the movement, the basis, the price confirmation or its reversal'
+        recorded_at:
+          type: string
+          format: date-time
+    Valuation:
+      type: object
+      additionalProperties: false
+      required:
+      - legal_entity_id
+      - product_id
+      - method
+      - epoch
+      - next_seq
+      - state
+      - quantity
+      - value
+      - unit_cost
+      - currency
+      - waiting_since
+      - stopped_reason
+      - updated_at
+      - layers_in_stock
+      properties:
+        legal_entity_id: &id005
+          type: string
+          format: uuid
+        product_id: *id005
+        method:
+          enum:
+          - moving_average
+          - fifo
+        epoch:
+          type: string
+          description: the valuation sequence's epoch being followed (<recovery generation>.<timeline>, protocol 14)
+        next_seq:
+          type: integer
+          description: the next sequence number to value
+        state:
+          enum:
+          - running
+          - waiting_gap
+          - waiting_basis
+          - stopped
+        quantity:
+          $ref: '#/components/schemas/Signed'
+        value:
+          $ref: '#/components/schemas/Signed'
+        unit_cost:
+          type:
+          - string
+          - 'null'
+          description: value ÷ quantity; null when nothing is in stock
+        currency:
+          type: string
+          description: the legal entity's base currency
+        waiting_since:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        stopped_reason:
+          type:
+          - string
+          - 'null'
+          description: 'why it stopped (VS05): a movement kind not known, an epoch not aligned'
+        updated_at:
+          type: string
+          format: date-time
+        layers_in_stock:
+          type: array
+          items:
+            $ref: '#/components/schemas/Layer'
+          description: 'FIFO: the layers with quantity left, oldest first; moving average: empty'

@@ -139,9 +139,9 @@
 | 命令或查询 | 面 | 操作 |
 | --- | --- | --- |
 | 计价政策：读取、修改 | 用户面 | `erp.costing.policy.read`、`.manage` |
-| 计价进度：列表（按状态筛选）、读取 | 用户面 | `erp.costing.valuation.read` |
-| 产品的估值：某法人某产品的在库数量、价值、平均单价；先进先出的各层 | 用户面 | `erp.costing.valuation.read` |
-| 成本层：列表（待定价的可以筛）、读取（含来源） | 用户面 | `erp.costing.valuation.read` |
+| 计价进度：列表（按法人、产品、状态筛选） | 用户面 | `erp.costing.valuation.read` |
+| 产品的估值（读取一个计价进度）：某法人某产品的进度、在库数量、价值、平均单价；先进先出还有在库的各层 | 用户面 | `erp.costing.valuation.read` |
+| 成本层：列表（按最高来源筛，待定价是 `policy`；按是否还有在库）、读取（按入库流水，含来源与到达顺序） | 用户面 | `erp.costing.valuation.read` |
 | 成本事实：列表（按法人、产品、规则、流水） | 用户面 | `erp.costing.valuation.read` |
 | 增量事实按身份读回 | 系统面 `FactService.Read` | `erp.costing.system.read` |
 | 采购退货的可退数量（RT01） | 系统面 `LayerService.ReturnLimit` | `erp.costing.system.read`，只许 `erp/purchase` |

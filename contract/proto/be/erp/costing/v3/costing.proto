@@ -1,0 +1,51 @@
+// The system surface of erp/costing: the read of this component's incremental facts by identity (protocol 05's common
+// rules: the cost facts it publishes for erp/finance), and a purchase return's limit (protocol 05b's returns: under
+// FIFO a return never exceeds what is still in stock of its receipt's cost layer). Callers use their service identity;
+// it never filters by a user. The user surface is REST (../../../../../openapi.yaml); the event payloads are
+// ../../../../../events/ (the cost facts refer to erp/finance's shared accounting fact contract).
+syntax = "proto3";
+
+package be.erp.costing.v3;
+
+option go_package = "github.com/brickKit/erp-costing/contract/v3/gen/go/be/erp/costing/v3;costingv3";
+
+// FactService reads back this component's incremental facts by their identities (a consumer that missed one).
+service FactService {
+  rpc Read(ReadRequest) returns (ReadResponse);
+}
+
+message ReadRequest {
+  repeated string fact_ids = 1;
+}
+
+message Fact {
+  string fact_id = 1;
+  // the event type, e.g. erp.costing.accounting_fact.v1; empty when no such fact
+  string type = 2;
+  // the event payload (JSON, the event's schema)
+  bytes data = 3;
+}
+
+message ReadResponse {
+  // in the order asked; a fact unknown here has an empty type
+  repeated Fact facts = 1;
+}
+
+// LayerService answers erp/purchase before a purchase return (only erp/purchase may call it).
+service LayerService {
+  rpc ReturnLimit(ReturnLimitRequest) returns (ReturnLimitResponse);
+}
+
+message ReturnLimitRequest {
+  // the receipt movement the return refers to (erp/inventory's fact_id)
+  string origin_movement_id = 1;
+}
+
+message ReturnLimitResponse {
+  // false: the movement is not valued yet (costing runs behind inventory, protocol 05b); the caller does not limit
+  bool known = 1;
+  // true when the legal entity costs by FIFO: quantity is the most that may be returned; false (moving average): no limit
+  bool limited = 2;
+  // what is still in stock of the layer, in the product's base unit (a decimal string); empty unless limited
+  string quantity = 3;
+}
