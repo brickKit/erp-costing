@@ -13,9 +13,10 @@ const (
 	Currency = "mdm/currency"
 	// Inventory numbers the movements and answers a gap in a valuation sequence (StockService.Movements, VS03).
 	Inventory = "erp/inventory"
-	// Purchase publishes the receipts' valuation bases; it calls LayerService.ReturnLimit before a purchase return.
+	// Purchase publishes the receipts' valuation bases (subscribed to, not a dependency: it calls
+	// LayerService.ReturnLimit before a purchase return, and pins on both sides would never settle).
 	Purchase = "erp/purchase"
-	// Finance publishes the price confirmations and posts the cost facts; optional.
+	// Finance publishes the price confirmations and posts the cost facts (subscribed to, not a dependency).
 	Finance = "erp/finance"
 )
 

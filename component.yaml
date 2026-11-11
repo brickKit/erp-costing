@@ -13,10 +13,6 @@ dependencies:
     - mdm/currency@3.0.33
     - mdm/org@3.0.35
     - erp/inventory@3.0.39
-    - id: erp/purchase@3.0.3
-      optional: true
-    - id: erp/finance@3.0.6
-      optional: true
 
 events:
   publishes:

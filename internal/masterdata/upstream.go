@@ -75,12 +75,6 @@ func CurrencyScale(m *core.Base, ctx context.Context, code string) (int32, error
 	return cur.MinorUnit, json.Unmarshal(res.GetResults()[0].GetData(), &cur)
 }
 
-// Deployed says whether an optional dependency is in the assembly (erp/purchase, erp/finance).
-func Deployed(m *core.Base, id string) bool {
-	_, ok := m.RT.GRPC(id)
-	return ok
-}
-
 // Movements reads a valuation sequence back from erp/inventory (StockService.Movements, VS03, VS04): the movements of
 // the legal entity and product numbered from from on in epoch, at most core.MaxRefetch, and the highest number
 // erp/inventory has given in that epoch.

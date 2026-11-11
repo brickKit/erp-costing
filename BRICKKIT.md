@@ -21,7 +21,7 @@
 ## 依赖说明
 
 - 必需：数据库、消息系统、身份成员、授权成员、`mdm/org`、`mdm/currency`、`erp/inventory`（流水与按序号补取，3.0.39 起）。
-- 可选：`erp/purchase`（收货计价依据；缺时入库按政策价）；`erp/finance`（票据单价确认；接收成本事实过账；缺时暂估不被调整，成本事实只供查询）；审计组件。
+- 订阅、不依赖（本组件不调用它们）：`erp/purchase` 的收货计价依据（没装时入库按政策价）；`erp/finance` 的票据单价确认（没装时暂估不被调整，成本事实也没人过账、只供查询）。可选的审计组件。
 - 库存不可达时：缺口补取等下一个周期再试，后面的流水不计价；已有数据照常读取。
 
 ## 配置指南
@@ -37,7 +37,7 @@
 | `BUS_URL`（必填，密钥）、`IMPLEMENTATION_INSTANCE`（必填） | 消息系统；实现实例是安装时生成的随机身份 |
 | `AUDIT_GRPC_URL` | 审计组件的系统面；缺时审计记录留在本地，按协议 03 处理 |
 
-依赖的地址由 BrickKit 按依赖注入（`MDM_ORG_GRPC_ENDPOINT`、`MDM_CURRENCY_GRPC_ENDPOINT`、`ERP_INVENTORY_GRPC_ENDPOINT`，装了时还有 `ERP_PURCHASE_GRPC_ENDPOINT`、`ERP_FINANCE_GRPC_ENDPOINT`），不是配置键。
+依赖的地址由 BrickKit 按依赖注入（`MDM_ORG_GRPC_ENDPOINT`、`MDM_CURRENCY_GRPC_ENDPOINT`、`ERP_INVENTORY_GRPC_ENDPOINT`），不是配置键。
 
 ## 契约索引
 

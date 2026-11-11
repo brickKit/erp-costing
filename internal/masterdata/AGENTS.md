@@ -4,14 +4,14 @@
 
 ## 负责与不负责
 
-- 负责：到依赖的连接（`Conn`）、法人与本位币（`LegalEntityOf`）、币种的小数位（`CurrencyScale`）、库存按计价序号补取流水（`Movements`，VS03、VS04）、即期汇率（`RateOf`，LY02、LY03；没有汇率答 `CURRENCY_NOT_USABLE`）、可选依赖装没装（`Deployed`）。
+- 负责：到依赖的连接（`Conn`）、法人与本位币（`LegalEntityOf`）、币种的小数位（`CurrencyScale`）、库存按计价序号补取流水（`Movements`，VS03、VS04）、即期汇率（`RateOf`，LY02、LY03；没有汇率答 `CURRENCY_NOT_USABLE`）。
 - 不负责：业务判断。
 
 ## 文件
 
 | 文件 | 内容 |
 | --- | --- |
-| `upstream.go` | `Conn`、`LegalEntity`、`LegalEntityOf`、`CurrencyScale`、`Movements`、`Rate`、`RateOf`、`Deployed` |
+| `upstream.go` | `Conn`、`LegalEntity`、`LegalEntityOf`、`CurrencyScale`、`Movements`、`Rate`、`RateOf` |
 
 ## 依赖与被依赖
 
