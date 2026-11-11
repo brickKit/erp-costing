@@ -14,6 +14,8 @@ import (
 	inventoryv3 "github.com/brickKit/erp-inventory/contract/v3/gen/go/be/erp/inventory/v3"
 	currencyv3 "github.com/brickKit/mdm-currency/contract/v3/gen/go/be/mdm/currency/v3"
 	orgv3 "github.com/brickKit/mdm-org/contract/v3/gen/go/be/mdm/org/v3"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // --- mdm/org: legal entities ---
@@ -58,6 +60,18 @@ func (currencyStandIn) Read(_ context.Context, in *currencyv3.ReadRequest) (*cur
 		out.Results = append(out.Results, r)
 	}
 	return out, nil
+}
+
+// rateStandIn answers USD to CNY at 7.2 on any date; any other pair has no rate.
+type rateStandIn struct {
+	currencyv3.UnimplementedRateServiceServer
+}
+
+func (rateStandIn) EffectiveRate(_ context.Context, in *currencyv3.EffectiveRateRequest) (*currencyv3.EffectiveRateResponse, error) {
+	if in.GetFromCurrency() != "USD" || in.GetToCurrency() != "CNY" {
+		return nil, status.Error(codes.NotFound, "no rate")
+	}
+	return &currencyv3.EffectiveRateResponse{Rate: "7.2", RateDate: in.GetDate(), RateType: in.GetRateType()}, nil
 }
 
 // --- erp/inventory: the numbered movements, read back by valuation sequence ---

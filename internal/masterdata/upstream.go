@@ -12,6 +12,8 @@ import (
 	currencyv3 "github.com/brickKit/mdm-currency/contract/v3/gen/go/be/mdm/currency/v3"
 	orgv3 "github.com/brickKit/mdm-org/contract/v3/gen/go/be/mdm/org/v3"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Every call here runs outside a transaction (protocol P4.20): evidence first, then the transaction. Unreachable is
@@ -93,4 +95,32 @@ func Movements(m *core.Base, ctx context.Context, le, product, epoch string, fro
 		return nil, 0, err
 	}
 	return res.GetMovements(), res.GetLastSeq(), nil
+}
+
+// Rate is the rate a source's price was converted at (LY02, LY03).
+type Rate struct {
+	Rate string `json:"rate"`
+	Date string `json:"date"`
+	Type string `json:"type"`
+}
+
+// RateOf is the spot rate from a currency to the base currency on the date (mdm/currency's RateService); nil when
+// they are the same currency. No rate answers CURRENCY_NOT_USABLE.
+func RateOf(m *core.Base, ctx context.Context, from, to, date string) (*Rate, error) {
+	if from == to {
+		return nil, nil
+	}
+	c, err := Conn(m, core.Currency)
+	if err != nil {
+		return nil, err
+	}
+	res, err := currencyv3.NewRateServiceClient(c).EffectiveRate(ctx, &currencyv3.EffectiveRateRequest{RateType: "spot",
+		Date: date, FromCurrency: from, ToCurrency: to}, calls.Idempotent())
+	if status.Code(err) == codes.NotFound {
+		return nil, core.ErrCurrency.New("no spot rate " + from + "/" + to + " on " + date)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &Rate{Rate: res.GetRate(), Date: res.GetRateDate(), Type: res.GetRateType()}, nil
 }

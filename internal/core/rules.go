@@ -23,6 +23,9 @@ var (
 		"The record's state does not allow this")
 	ErrLegalEntity = errs.Define(ID, "LEGAL_ENTITY_NOT_USABLE", errs.FailedPrecondition, 409, errs.RetryNo,
 		"The legal entity does not exist or is not active")
+	// LY02, LY03: no spot rate to convert a source's price to the base currency
+	ErrCurrency = errs.Define(ID, "CURRENCY_NOT_USABLE", errs.FailedPrecondition, 409, errs.RetryNo,
+		"No rate converts the currency to the legal entity's base currency")
 	// PO01: a legal entity with a valued movement keeps its costing method
 	ErrPolicyInUse = errs.Define(ID, "POLICY_IN_USE", errs.FailedPrecondition, 409, errs.RetryNo,
 		"A movement of the legal entity is valued: the costing method no longer changes")

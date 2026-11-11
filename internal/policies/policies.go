@@ -16,8 +16,8 @@ import (
 
 // The costing methods (PO01).
 const (
-	MovingAverage = "moving_average"
-	FIFO          = "fifo"
+	MovingAverage = core.MethodMovingAverage
+	FIFO          = core.MethodFIFO
 )
 
 // Policy is a legal entity's policy as the user surface reads it.

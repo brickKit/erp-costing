@@ -8,10 +8,12 @@
 
 | 包 | 一句话 | 依赖（本组件内） |
 | --- | --- | --- |
+| `sources` | 更高的来源进来：依据与撤回、票据确认与冲回；折成本位币后交给 `layers` | `core`、`masterdata`、`policies`、`layers`、`sequence` |
 | `sequence` | 计价序列：收流水、按序号一条一条计价、缺口补取、纪元、停下；计价进度的生命周期与查询 | `core`、`masterdata`、`policies`、`layers`、`issues` |
-| `issues` | 出库与退货的成本（移动平均；先进先出与采购退货随 P3e） | `core`、`facts`、`layers`、`policies` |
-| `layers` | 成本层与单价来源：收货计价依据、入层、政策价 | `core`、`facts` |
+| `issues` | 出库与退货的成本（移动平均；先进先出与采购退货随 P3e） | `core`、`facts`、`layers`、`methods` |
+| `layers` | 成本层与单价来源：入层、政策价、来源的记录与替换、调整（AD01） | `core`、`facts`、`methods` |
 | `policies` | 计价政策：法人的计价方法 | `core`、`masterdata` |
+| `methods` | 计价方法的不同之处（纯算术）：移动平均出库取多少、调整怎样分（AD02） | `core` |
 | `facts` | 成本事实的形状与发布（`Publish`）；系统面 `FactService.Read` | `core` |
 | `masterdata`（共用） | 事务外取证：法人与本位币、币种的小数位、库存的补取（`Movements`） | `core` |
 | `core`（共用） | 名字、资源与操作的定义、错误与校验、生命周期表、增量事实、配置、`Base` | — |
@@ -20,10 +22,11 @@
 
 | 层 | 包 |
 | --- | --- |
+| 6 | `sources` |
 | 5 | `sequence` |
 | 4 | `issues` |
 | 3 | `layers` |
-| 2 | `facts`、`masterdata`、`policies` |
+| 2 | `facts`、`masterdata`、`methods`、`policies` |
 | 1 | `core` |
 
 核对：`go list -f '{{.Imports}}' ./internal/<包>`。
@@ -42,4 +45,4 @@
 
 ## 测试
 
-模块没有单独的单元测试（生命周期表除外）：业务规则由 `itest/` 的流程测试覆盖，每个模块的说明写了它在哪个文件里被测。
+模块没有单独的单元测试（生命周期表与纯算术的 `methods` 除外）：业务规则由 `itest/` 的流程测试覆盖，每个模块的说明写了它在哪个文件里被测。

@@ -23,14 +23,15 @@
 | `sequence_integration_test.go` | `sequence` | 按依据入库与入库事实、乱序到达等缺口、移动平均出库与事实、重复的流水、缺口到期补取、等依据与依据到达、依据不来按政策价、非采购入库与价格为 0、晚装的范围补前面的号、计价进度的读取与列表 | VS01–VS03、LY01、IS01、CF01 | `sequence`、`layers`、`issues`、`facts` |
 | `sequence_integration_test.go` | `unknownKind` | 不认识的流水种类停下范围，之后的流水收下不计价 | VS02、VS05 | `sequence` |
 | `sequence_integration_test.go` | `epochs` | 换纪元：先把旧纪元补到底再从 1 起；重新编号的流水不再计价；更旧纪元的丢弃；本组件超前时停下 | VS04 | `sequence` |
+| `sources_integration_test.go` | `sources` | 依据替换政策价与移动平均的分法、同一依据再来、外币依据折算、两张票据各占自己的数量（供应商、票据日期、外币）、出清后冲回全进差异、冲回先于确认、确认先于入库（按票据价入层不调整）、开票后到的依据只换没开票的单位、撤回的依据 | LY02–LY05、AD01、AD02（移动平均） | `sources`、`layers`、`methods` |
 | `policy_integration_test.go` | `policyInUse` | 有计价过的流水后不能改方法 | PO01 | `policies` |
 
 共用的：
 
 | 文件 | 内容 |
 | --- | --- |
-| `endtoend_integration_test.go` | `TestCostingEndToEnd`（各步的顺序）；`fixture`（运行中的成员、替身、世界的 ID：上海与北京两个法人、一个仓库）；`start`；辅助：`publish`（在来源的流上发布事实，像它的转发器那样）、`fact`、`client.do`、`at`、`get`、`portFree` |
-| `standins_integration_test.go` | 替身，各按已发布的契约经 mTLS 答：`mdm/org`（法人）、`mdm/currency`（CNY 与 USD）、`erp/inventory` 的 `StockService.Movements`（测试编好号的流水，按纪元与序号答；`count` 数调用） |
+| `endtoend_integration_test.go` | `TestCostingEndToEnd`（各步的顺序）；`fixture`（运行中的成员、替身、世界的 ID：上海与北京两个法人、一个仓库、一个供应商）；`start`；辅助：`publish`（在来源的流上发布事实，像它的转发器那样）、`fact`、`client.do`、`at`、`get`、`portFree` |
+| `standins_integration_test.go` | 替身，各按已发布的契约经 mTLS 答：`mdm/org`（法人）、`mdm/currency`（CNY 与 USD；即期汇率 USD→CNY 7.2）、`erp/inventory` 的 `StockService.Movements`（测试编好号的流水，按纪元与序号答；`count` 数调用） |
 
 ## 加测试
 

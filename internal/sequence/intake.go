@@ -4,7 +4,6 @@ import (
 	"context"
 
 	core "github.com/brickKit/erp-costing/v3/internal/core"
-	layers "github.com/brickKit/erp-costing/v3/internal/layers"
 
 	"github.com/brickKit/be-sdk-go/v3/db"
 	"github.com/brickKit/be-sdk-go/v3/events"
@@ -57,26 +56,11 @@ func keep(m *core.Base, ctx context.Context, tx db.Tx, mv core.Movement, data []
 		ON CONFLICT DO NOTHING`, id, seq.Epoch, seq.Seq, mv.FactID, data); err != nil || !wakeUp {
 		return err
 	}
-	return wake(m, ctx, tx, id)
+	return Wake(m, ctx, tx, id)
 }
 
-// OnBasis receives a valuation basis (LY01): kept by its receipt line; a scope waiting for a basis is woken.
-func OnBasis(m *core.Base, ctx context.Context, tx db.Tx, e events.Received) error {
-	le, product, ok, err := layers.RegisterBasis(m, ctx, tx, e)
-	if err != nil || !ok {
-		return err
-	}
-	var id string
-	err = tx.QueryRow(ctx, `SELECT coalesce((SELECT id::text FROM scope WHERE legal_entity_id = $1 AND product_id = $2
-		AND state = $3), '')`, le, product, WaitingBasis).Scan(&id)
-	if err != nil || id == "" {
-		return err
-	}
-	return wake(m, ctx, tx, id)
-}
-
-// wake queues the scope's processing unless one is pending.
-func wake(m *core.Base, ctx context.Context, tx db.Tx, scopeID string) error {
+// Wake queues the scope's processing unless one is pending.
+func Wake(m *core.Base, ctx context.Context, tx db.Tx, scopeID string) error {
 	tag, err := tx.Exec(ctx, `UPDATE scope SET queued = true WHERE id = $1 AND NOT queued`, scopeID)
 	if err != nil || tag.RowsAffected() == 0 {
 		return err

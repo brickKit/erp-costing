@@ -6,6 +6,7 @@ import (
 	core "github.com/brickKit/erp-costing/v3/internal/core"
 	policies "github.com/brickKit/erp-costing/v3/internal/policies"
 	sequence "github.com/brickKit/erp-costing/v3/internal/sequence"
+	sources "github.com/brickKit/erp-costing/v3/internal/sources"
 
 	"github.com/brickKit/be-sdk-go/v3/db"
 	"github.com/brickKit/be-sdk-go/v3/events"
@@ -59,12 +60,19 @@ func (m *Module) Services(s *grpcx.Services) error {
 	return nil
 }
 
-// Subscriptions declares the inputs (VS01, LY01): erp/inventory's movements and erp/purchase's valuation bases.
+// Subscriptions declares the inputs: erp/inventory's movements (VS01); erp/purchase's valuation bases and their
+// withdrawals, erp/finance's price confirmations and their reversals (LY01-LY05).
 func (m *Module) Subscriptions(s *events.Subscriptions) error {
 	s.Add(events.Sub{Name: "movements", Streams: []string{core.InventoryStream}, Types: []string{core.MovementRecorded},
 		Handle: m.received(sequence.OnMovement)})
 	s.Add(events.Sub{Name: "valuation-bases", Streams: []string{core.PurchaseStream}, Types: []string{core.ValuationBasis},
-		Handle: m.received(sequence.OnBasis)})
+		Handle: m.received(sources.OnBasis)})
+	s.Add(events.Sub{Name: "basis-withdrawals", Streams: []string{core.PurchaseStream}, Types: []string{core.BasisWithdrawn},
+		Handle: m.received(sources.OnWithdrawn)})
+	s.Add(events.Sub{Name: "price-confirmations", Streams: []string{core.FinanceStream}, Types: []string{core.PriceConfirmed},
+		Handle: m.received(sources.OnConfirmed)})
+	s.Add(events.Sub{Name: "price-reversals", Streams: []string{core.FinanceStream}, Types: []string{core.PriceReversed},
+		Handle: m.received(sources.OnReversed)})
 	return nil
 }
 
@@ -73,6 +81,8 @@ func (m *Module) Subscriptions(s *events.Subscriptions) error {
 func (m *Module) Jobs(j *work.Jobs) error {
 	j.Add(work.Job{Name: sequence.JobProcess, Kind: work.Queue, Effect: work.IdempotentExternal,
 		MaxAttempts: work.Unlimited, Handle: m.job(sequence.Process)})
+	j.Add(work.Job{Name: sources.JobApply, Kind: work.Queue, Effect: work.IdempotentExternal,
+		MaxAttempts: work.Unlimited, Handle: m.job(sources.Apply)})
 	return nil
 }
 

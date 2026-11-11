@@ -43,9 +43,12 @@ type Accounting struct {
 
 // The rule keys of erp/finance's catalog this component posts under, and their roles.
 const (
-	RuleReceipt     = "inventory_receipt" // inventory debit, grni credit
-	RuleCostOfSales = "cost_of_sales"     // cost_of_sales debit, inventory credit
-	RuleReturn      = "inventory_return"  // grni debit, inventory credit
+	RuleReceipt     = "inventory_receipt"    // inventory debit, grni credit
+	RuleCostOfSales = "cost_of_sales"        // cost_of_sales debit, inventory credit
+	RuleReturn      = "inventory_return"     // grni debit, inventory credit
+	RuleAdjustUp    = "cost_adjustment_up"   // inventory and variance debit, grni credit
+	RuleAdjustDown  = "cost_adjustment_down" // grni debit, inventory and variance credit
+	RoleVariance    = "variance"
 	RoleInventory   = "inventory"
 	RoleGRNI        = "grni"
 	RoleCostOfSales = "cost_of_sales"

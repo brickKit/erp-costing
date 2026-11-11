@@ -45,6 +45,12 @@ const (
 	KindPurchaseReturn = "purchase_return"
 )
 
+// The costing methods (PO01).
+const (
+	MethodMovingAverage = "moving_average"
+	MethodFIFO          = "fifo"
+)
+
 // RefPurchaseReceipt is the reference kind of a purchase receipt's movement: its line_id is the receipt line, the
 // valuation basis's fact_id (LY01).
 const RefPurchaseReceipt = "purchase_receipt"
@@ -93,6 +99,10 @@ func CmpEpoch(a, b string) int {
 const (
 	// FactValued: a movement's valuation (receipt, issue, purchase return)
 	FactValued = "valued"
+	// FactReplaced: a source replacing a layer's price (with the layer's movement and the source's fact)
+	FactReplaced = "replaced"
+	// FactReversed: an invoice's contribution taken back (with the layer's movement and the confirmation)
+	FactReversed = "reversed"
 )
 
 // factNamespace is the namespace of the cost facts' UUIDv5 identities (CF01).

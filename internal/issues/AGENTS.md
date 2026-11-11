@@ -11,11 +11,11 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| `issues.go` | `Issue`（发 `cost_of_sales`）、`Return`（P3e 前答“本版本不计价”）、`movingAverage` |
+| `issues.go` | `Issue`（发 `cost_of_sales`）、`Return`（P3e 前答“本版本不计价”）、`movingAverage`（取数交给 `methods.AverageTake`，超出在库时告警） |
 
 ## 依赖与被依赖
 
-- 依赖：`core`、`facts`、`layers`、`policies`。
+- 依赖：`core`、`facts`、`layers`（政策价）、`methods`。
 - 被依赖：`sequence`。
 
 ## 规则在哪
