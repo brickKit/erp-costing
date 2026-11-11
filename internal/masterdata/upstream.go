@@ -8,6 +8,7 @@ import (
 
 	"github.com/brickKit/be-sdk-go/v3/calls"
 	"github.com/brickKit/be-sdk-go/v3/errs"
+	inventoryv3 "github.com/brickKit/erp-inventory/contract/v3/gen/go/be/erp/inventory/v3"
 	currencyv3 "github.com/brickKit/mdm-currency/contract/v3/gen/go/be/mdm/currency/v3"
 	orgv3 "github.com/brickKit/mdm-org/contract/v3/gen/go/be/mdm/org/v3"
 	"google.golang.org/grpc"
@@ -76,4 +77,20 @@ func CurrencyScale(m *core.Base, ctx context.Context, code string) (int32, error
 func Deployed(m *core.Base, id string) bool {
 	_, ok := m.RT.GRPC(id)
 	return ok
+}
+
+// Movements reads a valuation sequence back from erp/inventory (StockService.Movements, VS03, VS04): the movements of
+// the legal entity and product numbered from from on in epoch, at most core.MaxRefetch, and the highest number
+// erp/inventory has given in that epoch.
+func Movements(m *core.Base, ctx context.Context, le, product, epoch string, from int64) ([][]byte, int64, error) {
+	c, err := Conn(m, core.Inventory)
+	if err != nil {
+		return nil, 0, err
+	}
+	res, err := inventoryv3.NewStockServiceClient(c).Movements(ctx, &inventoryv3.MovementsRequest{LegalEntityId: le,
+		ProductId: product, ValuationEpoch: epoch, FromSeq: from, Limit: core.MaxRefetch}, calls.Idempotent())
+	if err != nil {
+		return nil, 0, err
+	}
+	return res.GetMovements(), res.GetLastSeq(), nil
 }

@@ -4,19 +4,19 @@
 
 ## 负责与不负责
 
-- 负责：到依赖的连接（`Conn`）、法人与本位币（`LegalEntityOf`）、币种的小数位（`CurrencyScale`）、可选依赖装没装（`Deployed`）。
+- 负责：到依赖的连接（`Conn`）、法人与本位币（`LegalEntityOf`）、币种的小数位（`CurrencyScale`）、库存按计价序号补取流水（`Movements`，VS03、VS04）、可选依赖装没装（`Deployed`）。
 - 不负责：业务判断。
 
 ## 文件
 
 | 文件 | 内容 |
 | --- | --- |
-| `upstream.go` | `Conn`、`LegalEntity`、`LegalEntityOf`、`CurrencyScale`、`Deployed` |
+| `upstream.go` | `Conn`、`LegalEntity`、`LegalEntityOf`、`CurrencyScale`、`Movements`、`Deployed` |
 
 ## 依赖与被依赖
 
-- 依赖：`core`；`mdm/org`、`mdm/currency` 的契约。
-- 被依赖：随计价的模块加入。
+- 依赖：`core`；`mdm/org`、`mdm/currency`、`erp/inventory` 的契约。
+- 被依赖：`policies`、`sequence`。
 
 ## 规则在哪
 

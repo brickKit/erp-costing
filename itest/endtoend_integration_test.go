@@ -71,12 +71,18 @@ type fixture struct {
 
 	// two legal entities: Shanghai (CNY, moving average) and Beijing (CNY, FIFO once a step sets it)
 	le, le2   string
+	warehouse string // erp/inventory's warehouse every movement names (the costing scope ignores it)
 	inventory *inventoryStandIn
 }
 
 func TestCostingEndToEnd(t *testing.T) {
 	fx := start(t)
 	fx.notInThisVersion()
+	fx.policies()
+	fx.sequence()
+	fx.unknownKind()
+	fx.epochs()
+	fx.policyInUse()
 }
 
 // sourceStreams are the streams the member subscribes to; the test publishes on them as their owners would.
@@ -100,7 +106,8 @@ func start(t *testing.T) *fixture {
 	pw, _ := u.User.Password()
 	w := sectest.New(t)
 	w.GrantAll(sectest.Alice, core.Definitions())
-	fx := &fixture{t: t, ctx: ctx, w: w, admin: admin, le: ids.New().String(), le2: ids.New().String()}
+	fx := &fixture{t: t, ctx: ctx, w: w, admin: admin, le: ids.New().String(), le2: ids.New().String(),
+		warehouse: ids.New().String()}
 	org := &orgStandIn{les: map[string]map[string]any{
 		fx.le: {"id": fx.le, "code": "SH", "state": "active", "timezone": "Asia/Shanghai", "base_currency": "CNY", "version": int64(1)},
 		fx.le2: {"id": fx.le2, "code": "BJ", "state": "active", "timezone": "Asia/Shanghai", "base_currency": "CNY",

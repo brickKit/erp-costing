@@ -14,6 +14,7 @@
 | `base.go` | `Base`：组件的运行时与配置（缺口等待 `GapWait`、计价依据的等待 `BasisWait`），每个模块函数的第一个参数 |
 | `names.go` | 常量；`fields`、`Definitions()`（每种资源的维度与字段）。列表能排序、筛选的字段要在这里它的资源下声明，不声明 SDK 就答 `FIELD_NOT_QUERYABLE`；计价进度、成本层、成本事实三种列表共用一个资源 `erp.costing.valuation` |
 | `rules.go` | `Err…`（本组件的原因）、表单的格式、`EntityFacts`、`BindOptional`、`Check`、`Invalid`、`NotFound`、`Unsupported`、`Change`、`Emit`、`Fact`、`Sum`、`Minus`、`Cmp` |
+| `values.go` | 库存流水的读法（`Movement`、`ParseMovement`、种类）、纪元（`EpochForm`、`CmpEpoch`）、成本事实的身份（`FactOf`，UUIDv5）、十进制的乘除与舍入（`Mul`、`Quo`、`Amount`、`Plain`）、计价事务里的范围 `Scope` |
 | `lifecycle.go` | 生命周期表：`Effect`、`Decision`、`Table`（`Decide`）、`Refused`、造格的 `RefuseCell`、`IgnoreCell`、`ProceedCell`、`MoveCell`；三项核对给各模块的单元测试用：`TableProblems`、`DocumentProblems`（与设计文档的表逐格相同）、`UntestedRules`（写法照 `erp/purchase`，SF30：以后进 SDK） |
 
 ## 依赖与被依赖

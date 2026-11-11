@@ -8,15 +8,22 @@
 
 | 包 | 一句话 | 依赖（本组件内） |
 | --- | --- | --- |
-| `facts` | 系统面 `FactService.Read` | `core` |
-| `masterdata`（共用） | 事务外取证：法人与本位币、币种的小数位 | `core` |
+| `sequence` | 计价序列：收流水、按序号一条一条计价、缺口补取、纪元、停下；计价进度的生命周期与查询 | `core`、`masterdata`、`policies`、`layers`、`issues` |
+| `issues` | 出库与退货的成本（移动平均；先进先出与采购退货随 P3e） | `core`、`facts`、`layers`、`policies` |
+| `layers` | 成本层与单价来源：收货计价依据、入层、政策价 | `core`、`facts` |
+| `policies` | 计价政策：法人的计价方法 | `core`、`masterdata` |
+| `facts` | 成本事实的形状与发布（`Publish`）；系统面 `FactService.Read` | `core` |
+| `masterdata`（共用） | 事务外取证：法人与本位币、币种的小数位、库存的补取（`Movements`） | `core` |
 | `core`（共用） | 名字、资源与操作的定义、错误与校验、生命周期表、增量事实、配置、`Base` | — |
 
 分层（每个包只引用比它低的层，没有环）：
 
 | 层 | 包 |
 | --- | --- |
-| 2 | `facts`、`masterdata` |
+| 5 | `sequence` |
+| 4 | `issues` |
+| 3 | `layers` |
+| 2 | `facts`、`masterdata`、`policies` |
 | 1 | `core` |
 
 核对：`go list -f '{{.Imports}}' ./internal/<包>`。

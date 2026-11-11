@@ -120,3 +120,10 @@ func (s *inventoryStandIn) Movements(_ context.Context, in *inventoryv3.Movement
 	}
 	return out, nil
 }
+
+// count is how many times Movements was called.
+func (s *inventoryStandIn) count() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.reads
+}

@@ -12,7 +12,7 @@
 | 文件 | 内容 |
 | --- | --- |
 | `definition.go` | `Version`、端口、迁移、自己的配置键（`VALUATION_GAP_WAIT`、`VALUATION_BASIS_WAIT`）；`Definition()` 把身份、流、资源与操作（`core.Definitions()`）收成组件定义 |
-| `module.go` | `Module` 与 `New`；`Routes`（用户面的每条路由 → 模块的处理函数与操作；还没做的先答“能力不支持”）、`Services`（系统面：`FactService` 任一组件、`LayerService` 只许 `erp/purchase` → `services.go`） |
+| `module.go` | `Module` 与 `New`；`Routes`（用户面的每条路由 → 模块的处理函数与操作；还没做的先答“能力不支持”）、`Services`（系统面：`FactService` 任一组件、`LayerService` 只许 `erp/purchase` → `services.go`）、`Subscriptions`（库存的流水、采购的计价依据 → `sequence`）、`Jobs`（`process-scope`） |
 | `services.go` | 系统面的方法（`Read` → `facts`）转给模块 |
 | `contract_test.go` | 单元测试：清单的 `configSchema` 与 `events`、OpenAPI 与路由一一对应、合并安全 |
 
@@ -20,7 +20,7 @@
 
 ## 依赖与被依赖
 
-- 依赖：`internal/core`、`internal/facts`（随实现增加）。
+- 依赖：`internal/core`、`internal/facts`、`internal/policies`、`internal/sequence`（随实现增加）。
 - 被依赖：`main.go`、外壳、`itest/`。
 - 模块不能反过来引用这里（会成环）：模块需要的名字放 `internal/core`。
 
