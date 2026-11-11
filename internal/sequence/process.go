@@ -34,7 +34,8 @@ const (
 // state is the scope as one step reads it, locked.
 type state struct {
 	core.Scope
-	waitingSince *time.Time
+	waitingSince *time.Time // when the wait began
+	waitDue      *time.Time // when its current period ends
 	reason       *string
 	gapDue       bool   // waiting_gap, and the gap wait is over
 	basisDue     bool   // waiting_basis, and the basis wait is over
@@ -121,12 +122,11 @@ func step(m *core.Base, ctx context.Context, id, currency string, scale int32, s
 // whether a wait is over and which newer epoch is waiting.
 func lock(m *core.Base, ctx context.Context, tx db.Tx, id string, s *state) error {
 	if err := tx.QueryRow(ctx, `SELECT id::text, legal_entity_id::text, product_id::text, epoch, next_seq, state,
-		quantity::text, value::text, waiting_since, stopped_reason,
-		coalesce(state = 'waiting_gap' AND waiting_since + make_interval(secs => $2) <= now(), false),
-		coalesce(state = 'waiting_basis' AND waiting_since + make_interval(secs => $3) <= now(), false)
-		FROM scope WHERE id = $1 FOR UPDATE`, id, m.GapWait.Seconds(), m.BasisWait.Seconds()).Scan(&s.ID, &s.LegalEntityID,
-		&s.ProductID, &s.Epoch, &s.NextSeq, &s.State, &s.Quantity, &s.Value, &s.waitingSince, &s.reason, &s.gapDue,
-		&s.basisDue); err != nil {
+		quantity::text, value::text, waiting_since, wait_due, stopped_reason,
+		coalesce(state = 'waiting_gap' AND wait_due <= now(), false),
+		coalesce(state = 'waiting_basis' AND wait_due <= now(), false)
+		FROM scope WHERE id = $1 FOR UPDATE`, id).Scan(&s.ID, &s.LegalEntityID, &s.ProductID, &s.Epoch, &s.NextSeq,
+		&s.State, &s.Quantity, &s.Value, &s.waitingSince, &s.waitDue, &s.reason, &s.gapDue, &s.basisDue); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(ctx, `DELETE FROM movement_in WHERE scope_id = $1 AND epoch = $2 AND seq < $3`, s.ID, s.Epoch,
@@ -209,7 +209,7 @@ func valueNext(m *core.Base, ctx context.Context, tx db.Tx, s *state, factID str
 	if d := Lifecycle.Decide(s.State, command); d.Effect == core.Move {
 		s.State = d.To
 	}
-	s.waitingSince = nil
+	s.waitingSince, s.waitDue = nil, nil
 	ref, _ := json.Marshal(mv.Reference)
 	if _, err := tx.Exec(ctx, `INSERT INTO valued_movement (fact_id, scope_id, legal_entity_id, product_id, epoch, seq, kind,
 		quantity, business_date, cost, reference) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`, mv.FactID, s.ID,
@@ -256,29 +256,29 @@ func missing(m *core.Base, ctx context.Context, tx db.Tx, s *state) (next, error
 func waitFor(m *core.Base, ctx context.Context, tx db.Tx, s *state, command string, wait time.Duration) error {
 	if d := Lifecycle.Decide(s.State, command); d.Effect == core.Move {
 		s.State = d.To
-		since, err := restartWait(m, ctx, tx, s.ID, wait)
+		since, due, err := nextPeriod(m, ctx, tx, s.ID, wait)
 		if err != nil {
 			return err
 		}
-		s.waitingSince = &since
+		s.waitingSince, s.waitDue = &since, &due
 	}
 	return save(ctx, tx, s, false)
 }
 
-// restartWait starts the scope's wait now and queues the run due at its end.
-func restartWait(m *core.Base, ctx context.Context, tx db.Tx, scopeID string, wait time.Duration) (time.Time, error) {
-	var since time.Time
-	if err := tx.QueryRow(ctx, `SELECT now()`).Scan(&since); err != nil {
-		return since, err
+// nextPeriod starts a period of the scope's wait now and queues the run due at its end.
+func nextPeriod(m *core.Base, ctx context.Context, tx db.Tx, scopeID string, wait time.Duration) (now, due time.Time, err error) {
+	if err := tx.QueryRow(ctx, `SELECT now()`).Scan(&now); err != nil {
+		return now, now, err
 	}
-	_, err := m.RT.Work.EnqueueAt(ctx, tx, JobProcess, processArgs{ScopeID: scopeID}, since.Add(wait))
-	return since, err
+	due = now.Add(wait)
+	_, err = m.RT.Work.EnqueueAt(ctx, tx, JobProcess, processArgs{ScopeID: scopeID}, due)
+	return now, due, err
 }
 
 // stop stops the scope by the lifecycle (VS02, VS04), with its reason (VS05).
 func stop(ctx context.Context, tx db.Tx, s *state, command, reason string) error {
 	if d := Lifecycle.Decide(s.State, command); d.Effect == core.Move {
-		s.State, s.reason, s.waitingSince = d.To, &reason, nil
+		s.State, s.reason, s.waitingSince, s.waitDue = d.To, &reason, nil, nil
 	}
 	return save(ctx, tx, s, false)
 }
@@ -286,12 +286,12 @@ func stop(ctx context.Context, tx db.Tx, s *state, command, reason string) error
 // save writes the scope back; queued false says this run found nothing more to do.
 func save(ctx context.Context, tx db.Tx, s *state, queued bool) error {
 	q := `UPDATE scope SET epoch = $2, next_seq = $3, state = $4, quantity = $5, value = $6, currency = $7,
-		waiting_since = $8, stopped_reason = $9, updated_at = now()`
+		waiting_since = $8, wait_due = $9, stopped_reason = $10, updated_at = now()`
 	if !queued {
 		q += `, queued = false`
 	}
 	_, err := tx.Exec(ctx, q+` WHERE id = $1`, s.ID, s.Epoch, s.NextSeq, s.State, core.Plain(s.Quantity),
-		core.Amount(s.Value, s.Scale), s.Currency, s.waitingSince, s.reason)
+		core.Amount(s.Value, s.Scale), s.Currency, s.waitingSince, s.waitDue, s.reason)
 	return err
 }
 
@@ -313,11 +313,11 @@ func readGap(m *core.Base, ctx context.Context, s *state) error {
 			return nil // moved on meanwhile
 		}
 		cur.Currency, cur.Scale = s.Currency, s.Scale
-		since, err := restartWait(m, ctx, tx, cur.ID, m.GapWait)
-		cur.waitingSince = &since
+		_, due, err := nextPeriod(m, ctx, tx, cur.ID, m.GapWait) // the wait began when the gap was found
 		if err != nil {
 			return err
 		}
+		cur.waitDue = &due
 		return save(ctx, tx, &cur, false)
 	})
 }
@@ -351,7 +351,7 @@ func readToEnd(m *core.Base, ctx context.Context, s *state) error {
 		if d.Effect == core.Move {
 			cur.State = d.To
 		}
-		cur.Epoch, cur.NextSeq, cur.waitingSince = cur.newer, 1, nil
+		cur.Epoch, cur.NextSeq, cur.waitingSince, cur.waitDue = cur.newer, 1, nil, nil
 		return save(ctx, tx, &cur, true)
 	})
 }

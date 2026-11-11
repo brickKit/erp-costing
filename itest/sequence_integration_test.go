@@ -78,6 +78,22 @@ func (fx *fixture) sequence() {
 	f = fx.fact(core.FactOf(i5["fact_id"].(string), core.FactValued), core.AccountingFact)
 	assert.Equal(t, map[string]any{"cost_of_sales": "115.00", "inventory": "115.00"}, f["amounts"], "184 - 69")
 
+	// VS03: a gap erp/inventory has not numbered either: each period reads it back and waits another, warned; the wait
+	// keeps the time it began (the recovery check erp.costing.waiting reports it after an hour)
+	g := ids.New().String()
+	g1 := fx.movement(fx.le, g, "receipt", "1", "1.1", 1, nil)
+	fx.record(fx.movement(fx.le, g, "receipt", "1", "1.1", 2, nil))
+	s = fx.waitScope(fx.le, g, func(s map[string]any) bool { return s["state"] == "waiting_gap" })
+	began := s["waiting_since"]
+	reads = fx.inventory.count()
+	require.Eventually(t, func() bool { return fx.inventory.count() >= reads+2 }, 15*time.Second, 200*time.Millisecond,
+		"VS03: two periods read back")
+	s = fx.scope(fx.le, g)
+	assert.Equal(t, "waiting_gap", s["state"])
+	assert.Equal(t, began, s["waiting_since"], "VS03: the wait began when the gap was found")
+	fx.inventory.add(g1)
+	fx.scopeAt(fx.le, g, 3)
+
 	// LY01: a purchase receipt whose basis has not arrived waits (waiting_basis), and the movements after it with it;
 	// the basis arriving values it
 	l6 := ids.New().String()

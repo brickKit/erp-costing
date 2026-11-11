@@ -16,7 +16,7 @@
 | `intake.go` | `JobProcess`；`OnMovement`、`keep`（收与补取共用）、`Wake`（`scope.queued`：同一范围只排一个立即的工作项） |
 | `checks.go` | 恢复检查 `Checks`：停下的范围、在库为负、等了超过一小时 |
 | `stock.go` | `Lock`、`ScopeOf`、`SaveValue`：来源替换在计价序列之外改范围的价值，持同一把锁 |
-| `process.go` | `Process`（一次运行至多 500 步，多了排下一次）、`step`、`lock`、`valueNext`、`missing`、`waitFor`（按数据库的时钟排到期的工作项）、`stop`、`save`、`readGap`、`readToEnd`、`readBack` |
+| `process.go` | `Process`（一次运行至多 500 步，多了排下一次）、`step`、`lock`、`valueNext`、`missing`、`waitFor`（进入等待，起点 `waiting_since`）、`nextPeriod`（按数据库的时钟排本周期到期的工作项，`wait_due`；补不到的缺口只推后它）、`stop`、`save`、`readGap`、`readToEnd`、`readBack` |
 | `scopes.go` | `GetScope`（先进先出带在库的层）、`ListScopes`（路由） |
 
 ## 依赖与被依赖

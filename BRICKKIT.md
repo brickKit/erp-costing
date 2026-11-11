@@ -14,7 +14,7 @@
 ## 部署前准备
 
 - 数据库：PostgreSQL 16 及以上；schema `erp_costing`，属主角色 `erp_costing_owner`（只供迁移）与运行角色 `erp_costing_rw`（只有读写数据的权限），名字来自装配项目的注册表。三者由部署方在第一次启动前建好；表由本组件的迁移建，迁移里不建角色、不授权。
-- 消息系统（`BUS_URL`）与实现实例（`IMPLEMENTATION_INSTANCE`）：成本事实以增量事实发布到流 `erp.costing`（4 个分区）；订阅 `erp.inventory` 的流水、`erp.purchase` 的收货计价依据与撤回、`erp.finance` 的票据单价确认与冲回。装了 `erp/finance` 时，它的配置键 `FINANCE_FACT_SOURCES` 要列出 `erp.costing` 的 `erp.costing.accounting_fact.v1`，法人的科目映射要有成本的六条规则（`erp/finance` 3.0.4 起的目录），否则成本事实等着不过账。
+- 消息系统（`BUS_URL`）与实现实例（`IMPLEMENTATION_INSTANCE`）：成本事实以增量事实发布到流 `erp.costing`（4 个分区）；订阅 `erp.inventory` 的流水、`erp.purchase` 的收货计价依据与撤回、`erp.finance` 的票据单价确认与冲回。装了 `erp/finance` 时，它的配置键 `FINANCE_FACT_SOURCES` 要列出 `erp.costing` 的 `erp.costing.accounting_fact.v1`，法人的科目映射要有成本的六条规则（`erp/finance` 3.0.4 起的目录）。没列出时财务不订阅成本事实，它们只供查询（之后补上，财务从流里还保留的最早一条起收）；列出了而映射缺规则时，成本事实在财务等映射补上再过账。
 - 部署的服务证书（`SERVICE_TLS_*`）；身份与授权（`IAM_*`、`AUTHZ_GRPC_URL`、`DEPLOYMENT_ID`）；审计（`AUDIT_GRPC_URL`）。
 - 后台处理为主：适合外壳。
 
