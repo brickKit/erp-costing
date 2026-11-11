@@ -75,7 +75,9 @@ func newInventoryStandIn() *inventoryStandIn {
 	return &inventoryStandIn{moves: map[string][]map[string]any{}}
 }
 
-func (s *inventoryStandIn) key(le, product, epoch string) string { return le + "/" + product + "/" + epoch }
+func (s *inventoryStandIn) key(le, product, epoch string) string {
+	return le + "/" + product + "/" + epoch
+}
 
 // add keeps a numbered movement.
 func (s *inventoryStandIn) add(m map[string]any) {
