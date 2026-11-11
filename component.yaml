@@ -1,0 +1,195 @@
+apiVersion: brickkit/v1
+kind: Component
+
+metadata:
+  id: erp/costing
+  name: Costing
+  version: 3.0.0
+  description: "The value of stock (D46): erp/inventory's movements valued in each product and legal entity's valuation sequence (moving average or FIFO), cost layers with their price sources (the policy price, erp/purchase's valuation basis, erp/finance's price confirmation), the adjustments when a source is replaced, and the cost facts by erp/finance's shared accounting fact contract (protocol 05b)"
+  repository: https://github.com/brickKit/erp-costing
+
+dependencies:
+  components:
+    - mdm/currency@3.0.33
+    - mdm/org@3.0.35
+    - erp/inventory@3.0.39
+    - id: erp/purchase@3.0.3
+      optional: true
+    - id: erp/finance@3.0.6
+      optional: true
+
+events:
+  publishes:
+    - erp.costing.accounting_fact.v1
+  subscribes:
+    - erp.inventory_movement.recorded.v1
+    - erp.purchase_receipt.valuation_basis.v1
+    - erp.purchase_receipt.valuation_basis_withdrawn.v1
+    - erp.supplier_invoice.price_confirmed.v1
+    - erp.supplier_invoice.price_reversed.v1
+
+deployment:
+  type: container
+  build:
+    context: .
+    dockerfile: Dockerfile
+  port: 8229
+  extraPorts:
+    - name: grpc
+      port: 9229
+      protocol: grpc
+
+healthCheck:
+  type: http
+  path: /healthz
+
+readinessCheck:
+  type: http
+  path: /readyz
+
+migration:
+  command: ["/erp-costing", "migrate"]
+
+local:
+  runCommand: [go, run, .]
+  migrationCommand: [go, run, ., migrate]
+
+configSchema:
+  properties:
+    AUDIT_GRPC_URL:
+      description: 'process-level: the same for every member of a shell'
+      type: string
+    AUTHZ_GRPC_URL:
+      description: 'process-level: the same for every member of a shell'
+      type: string
+    BUS_SUBSCRIPTION_CONCURRENCY:
+      type: integer
+    BUS_URL:
+      description: 'process-level: the same for every member of a shell'
+      secret: true
+      type: string
+    DEPLOYMENT_ID:
+      description: 'process-level: the same for every member of a shell'
+      type: string
+    IAM_ISSUER:
+      description: 'process-level: the same for every member of a shell'
+      type: string
+    IAM_JWKS_URL:
+      description: 'process-level: the same for every member of a shell'
+      type: string
+    IMPLEMENTATION_INSTANCE:
+      type: string
+    LOG_LEVEL:
+      description: SDK default info
+      enum:
+        - debug
+        - info
+        - warn
+        - error
+      type: string
+    OBJECT_STORE_ACCESS_KEY:
+      type: string
+    OBJECT_STORE_BUCKET:
+      type: string
+    OBJECT_STORE_PREFIX:
+      type: string
+    OBJECT_STORE_REGION:
+      description: SDK default us-east-1
+      type: string
+    OBJECT_STORE_SECRET_KEY:
+      secret: true
+      type: string
+    OBJECT_STORE_URL:
+      type: string
+    OTEL_URL:
+      description: 'process-level: the same for every member of a shell'
+      type: string
+    PG_DATABASE:
+      type: string
+    PG_HOST:
+      type: string
+    PG_IDLE_IN_TX_TIMEOUT:
+      description: a duration (e.g. 2s, 500ms); SDK default 10s
+      type: string
+    PG_LOCK_TIMEOUT:
+      description: a duration (e.g. 2s, 500ms); SDK default 2s
+      type: string
+    PG_MIGRATION_HOST:
+      type: string
+    PG_MIGRATION_PORT:
+      type: integer
+    PG_OWNER_PASSWORD:
+      secret: true
+      type: string
+    PG_OWNER_USER:
+      type: string
+    PG_PASSWORD:
+      secret: true
+      type: string
+    PG_POOL_BACKGROUND:
+      description: SDK default 4
+      type: integer
+    PG_POOL_FOREGROUND:
+      description: SDK default 8
+      type: integer
+    PG_POOLER_PREPARED:
+      description: SDK default true
+      type: boolean
+    PG_PORT:
+      description: SDK default 5432
+      type: integer
+    PG_SCHEMA:
+      type: string
+    PG_STATEMENT_TIMEOUT:
+      description: a duration (e.g. 2s, 500ms); SDK default 5s
+      type: string
+    PG_USER:
+      type: string
+    RECOVERY_PHASE:
+      description: 'process-level: the same for every member of a shell'
+      enum:
+        - frozen
+        - redelivering
+        - replaying
+        - verifying
+        - read_only
+      type: string
+    SERVICE_TLS_CA_FILE:
+      description: a file path, re-read on rotation
+      mount: file
+      secret: true
+      type: string
+    SERVICE_TLS_CERT_FILE:
+      description: a file path, re-read on rotation
+      mount: file
+      secret: true
+      type: string
+    SERVICE_TLS_KEY_FILE:
+      description: a file path, re-read on rotation
+      mount: file
+      secret: true
+      type: string
+    STOP_DRAIN_DELAY:
+      description: a duration (e.g. 2s, 500ms); SDK default 2s
+      type: string
+    STOP_TIMEOUT:
+      description: a duration (e.g. 2s, 500ms); SDK default 30s
+      type: string
+    VALUATION_BASIS_WAIT:
+      description: 'how long a purchase receipt''s movement waits for its valuation basis before the policy prices it (protocol 05b''s start value 5 minutes); unset: 5 minutes; a duration (e.g. 2s, 500ms)'
+      type: string
+    VALUATION_GAP_WAIT:
+      description: 'how long a valuation sequence waits for a missing number before it reads it from erp/inventory (protocol 05b''s start value 5 minutes); unset: 5 minutes; a duration (e.g. 2s, 500ms)'
+      type: string
+  required:
+    - BUS_URL
+    - IMPLEMENTATION_INSTANCE
+    - PG_DATABASE
+    - PG_HOST
+    - PG_PASSWORD
+    - PG_SCHEMA
+    - PG_USER
+  type: object
+
+release:
+  goModule: true
