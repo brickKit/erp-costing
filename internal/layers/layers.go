@@ -131,6 +131,7 @@ func Receive(m *core.Base, ctx context.Context, tx db.Tx, s *core.Scope, mv core
 	s.Quantity = core.Sum(s.Quantity, mv.Quantity)
 	s.Value = core.Sum(s.Value, cost)
 	return cost, source, false, facts.Publish(m, ctx, tx, facts.Cost{FactID: core.FactOf(mv.FactID, core.FactValued),
-		LegalEntityID: s.LegalEntityID, MovementID: mv.FactID, Date: mv.BusinessDate, Rule: facts.RuleReceipt,
+		LegalEntityID: s.LegalEntityID, ProductID: s.ProductID, MovementID: mv.FactID,
+		Trigger: facts.Trigger{Kind: facts.TriggerMovement, FactID: mv.FactID}, Date: mv.BusinessDate, Rule: facts.RuleReceipt,
 		Currency: s.Currency, Amounts: map[string]string{facts.RoleInventory: cost, facts.RoleGRNI: cost}})
 }

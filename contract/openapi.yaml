@@ -196,6 +196,7 @@ paths:
           enum:
           - inventory_receipt
           - cost_of_sales
+          - cost_of_sales_return
           - inventory_return
           - cost_adjustment_up
           - cost_adjustment_down
@@ -453,6 +454,7 @@ components:
           enum:
           - inventory_receipt
           - cost_of_sales
+          - cost_of_sales_return
           - inventory_return
           - cost_adjustment_up
           - cost_adjustment_down

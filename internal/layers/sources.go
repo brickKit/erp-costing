@@ -107,7 +107,8 @@ func ApplyBasis(m *core.Base, ctx context.Context, tx db.Tx, s *core.Scope, b Ba
 		if err := l.setBase(ctx, tx, SourceBasis, &b.Line, *b.BasePrice); err != nil {
 			return err
 		}
-		if err := adjust(m, ctx, tx, s, l, stretches, diff, core.FactOf(mv, b.Line, core.FactReplaced), b.Date, nil); err != nil {
+		if err := adjust(m, ctx, tx, s, l, stretches, diff, core.FactOf(mv, b.Line, core.FactReplaced), b.Date, nil,
+			facts.Trigger{Kind: facts.TriggerBasis, FactID: b.Line}); err != nil {
 			return err
 		}
 	}
@@ -260,7 +261,8 @@ func ApplyConfirm(m *core.Base, ctx context.Context, tx db.Tx, s *core.Scope, c 
 		return err
 	}
 	return adjust(m, ctx, tx, s, l, stretches, core.Minus(*c.BasePrice, l.Base.Price),
-		core.FactOf(x.MovementID, c.FactID, core.FactReplaced), c.Date, c.SupplierID)
+		core.FactOf(x.MovementID, c.FactID, core.FactReplaced), c.Date, c.SupplierID,
+		facts.Trigger{Kind: facts.TriggerInvoice, FactID: c.FactID})
 }
 
 // short warns when a confirmation matches more units than its layer has without an invoice.
@@ -278,6 +280,7 @@ func short(m *core.Base, l *layer, got []methods.Range, want, confirmation strin
 
 // Reversal is a kept reversal.
 type Reversal struct {
+	FactID    string
 	Confirmed string
 	Date      string
 }
@@ -285,7 +288,8 @@ type Reversal struct {
 // ReversalOf reads the reversal of a confirmation.
 func ReversalOf(ctx context.Context, tx db.Tx, confirmed string) (Reversal, error) {
 	r := Reversal{Confirmed: confirmed}
-	return r, tx.QueryRow(ctx, `SELECT business_date::text FROM reversal WHERE confirmed_fact_id = $1`, confirmed).Scan(&r.Date)
+	return r, tx.QueryRow(ctx, `SELECT fact_id::text, business_date::text FROM reversal WHERE confirmed_fact_id = $1`,
+		confirmed).Scan(&r.FactID, &r.Date)
 }
 
 // MarkReversed marks a confirmation reversed and voids its matches not applied yet (LY04).
@@ -330,7 +334,8 @@ func ApplyReverse(m *core.Base, ctx context.Context, tx db.Tx, s *core.Scope, c 
 	if len(stretches) == 0 {
 		return nil
 	}
-	return adjust(m, ctx, tx, s, l, stretches, diff, core.FactOf(x.MovementID, c.FactID, core.FactReversed), r.Date, c.SupplierID)
+	return adjust(m, ctx, tx, s, l, stretches, diff, core.FactOf(x.MovementID, c.FactID, core.FactReversed), r.Date, c.SupplierID,
+		facts.Trigger{Kind: facts.TriggerReversal, FactID: r.FactID})
 }
 
 // applyPending lets a new layer take the confirmations kept for its movement (LY03): at the invoice's price from the
@@ -371,7 +376,7 @@ func applyPending(ctx context.Context, tx db.Tx, l *layer) error {
 // adjust publishes an adjustment of diff a unit over the stretches of the layer (AD01): split by the scope's method
 // (AD02), the inventory part into the scope's value; up or down, every amount positive; none when it is zero.
 func adjust(m *core.Base, ctx context.Context, tx db.Tx, s *core.Scope, l *layer, stretches []methods.Range, diff, factID,
-	date string, partner *string) error {
+	date string, partner *string, trigger facts.Trigger) error {
 	if err := l.save(ctx, tx); err != nil {
 		return err
 	}
@@ -382,7 +387,8 @@ func adjust(m *core.Base, ctx context.Context, tx db.Tx, s *core.Scope, l *layer
 		rule = facts.RuleAdjustDown
 		total, inventory, variance = core.Minus("0", total), core.Minus("0", inventory), core.Minus("0", variance)
 	}
-	return facts.Publish(m, ctx, tx, facts.Cost{FactID: factID, LegalEntityID: s.LegalEntityID, MovementID: l.MovementID,
+	return facts.Publish(m, ctx, tx, facts.Cost{FactID: factID, LegalEntityID: s.LegalEntityID, ProductID: s.ProductID,
+		MovementID: l.MovementID, Trigger: trigger,
 		Date: date, Rule: rule, Currency: s.Currency, PartnerID: partner, Amounts: map[string]string{
 			facts.RoleInventory: core.Amount(inventory, s.Scale), facts.RoleVariance: core.Amount(variance, s.Scale),
 			facts.RoleGRNI: core.Amount(total, s.Scale)}})

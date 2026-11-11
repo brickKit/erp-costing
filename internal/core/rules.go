@@ -67,13 +67,6 @@ func Invalid(field, why string) error {
 
 func NotFound(what string) error { return errs.New(errs.ReasonNotFound, what+" not found") }
 
-// Unsupported answers a route of the contract this version does not serve (CAPABILITY_UNSUPPORTED, D75).
-func Unsupported(what string) httpx.Handler {
-	return func(c *httpx.Context) error {
-		return errs.New(errs.ReasonCapabilityUnsupported, what+" is not in this version of erp/costing")
-	}
-}
-
 // Change records the business change with the record's new state (protocol 03), in the transaction that made it.
 func Change(m *Base, ctx context.Context, tx db.Tx, actor, op, typ, id string, after any) error {
 	_, err := m.RT.Audit.Write(ctx, tx, audit.Record{Category: audit.BusinessChange, Operation: op, Outcome: audit.Succeeded,

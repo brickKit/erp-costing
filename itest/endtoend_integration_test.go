@@ -78,7 +78,6 @@ type fixture struct {
 
 func TestCostingEndToEnd(t *testing.T) {
 	fx := start(t)
-	fx.notInThisVersion()
 	fx.policies()
 	fx.sequence()
 	fx.unknownKind()
@@ -86,6 +85,8 @@ func TestCostingEndToEnd(t *testing.T) {
 	fx.sources()
 	fx.fifo()
 	fx.returns()
+	fx.queries()
+	fx.recoveryChecks()
 	fx.policyInUse()
 }
 

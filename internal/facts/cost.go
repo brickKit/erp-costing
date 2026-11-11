@@ -65,7 +65,23 @@ type Cost struct {
 	Currency      string // the legal entity's base currency
 	Amounts       map[string]string
 	PartnerID     *string
+	ProductID     string
+	Trigger       Trigger // the input that made it
 }
+
+// Trigger is the input a cost fact comes from (the fact list's trigger).
+type Trigger struct {
+	Kind   string `json:"kind"` // TriggerMovement, TriggerBasis, TriggerInvoice, TriggerReversal
+	FactID string `json:"fact_id"`
+}
+
+// The kinds of trigger.
+const (
+	TriggerMovement = "movement"
+	TriggerBasis    = "basis"
+	TriggerInvoice  = "invoice"
+	TriggerReversal = "reversal"
+)
 
 // Publish publishes a cost fact in the valuation's transaction (CF01); a role of zero is left out, and a fact whose
 // amounts are all zero is not published (VS02).
@@ -82,5 +98,11 @@ func Publish(m *core.Base, ctx context.Context, tx db.Tx, c Cost) error {
 	f := Accounting{FactID: c.FactID, Source: Source{Component: core.ID, DocumentType: "inventory_movement",
 		DocumentID: c.MovementID}, LegalEntityID: c.LegalEntityID, BusinessDate: c.Date, PostingDate: c.Date,
 		RuleKey: c.Rule, Currency: c.Currency, Amounts: amounts, PartnerID: c.PartnerID, RecordedAt: canon.Time(time.Now())}
-	return core.Fact(m, ctx, tx, core.AccountingFact, c.FactID, c.LegalEntityID, f)
+	if err := core.Fact(m, ctx, tx, core.AccountingFact, c.FactID, c.LegalEntityID, f); err != nil {
+		return err
+	}
+	_, err := tx.Exec(ctx, `UPDATE costing_fact SET legal_entity_id = $2, product_id = $3, movement_id = $4, rule_key = $5,
+		business_date = $6, trigger_kind = $7, trigger_id = $8 WHERE fact_id = $1`, c.FactID, c.LegalEntityID, c.ProductID,
+		c.MovementID, c.Rule, c.Date, c.Trigger.Kind, c.Trigger.FactID)
+	return err
 }

@@ -18,7 +18,6 @@
 
 | 文件 | 步 | 测的流程 | 覆盖的规则 | 被测的模块 |
 | --- | --- | --- | --- | --- |
-| `unsupported_integration_test.go` | `notInThisVersion` | 契约里有、还没做的路由答“能力不支持” | D75 | 入口 `costing/module.go` |
 | `policy_integration_test.go` | `policies` | 计价政策的缺省、按版本修改、错的方法、不认识的法人 | PO01 | `policies` |
 | `sequence_integration_test.go` | `sequence` | 按依据入库与入库事实、乱序到达等缺口、移动平均出库与事实、重复的流水、缺口到期补取、等依据与依据到达、依据不来按政策价、非采购入库与价格为 0、晚装的范围补前面的号、计价进度的读取与列表 | VS01–VS03、LY01、IS01、CF01 | `sequence`、`layers`、`issues`、`facts` |
 | `sequence_integration_test.go` | `unknownKind` | 不认识的流水种类停下范围，之后的流水收下不计价 | VS02、VS05 | `sequence` |
@@ -26,6 +25,8 @@
 | `sources_integration_test.go` | `sources` | 依据替换政策价与移动平均的分法、同一依据再来、外币依据折算、两张票据各占自己的数量（供应商、票据日期、外币）、出清后冲回全进差异、冲回先于确认、确认先于入库（按票据价入层不调整）、开票后到的依据只换没开票的单位、撤回的依据 | LY02–LY05、AD01、AD02（移动平均） | `sources`、`layers`、`methods` |
 | `issues_integration_test.go` | `fifo` | 北京改先进先出：按单位单价出库、开票后的调整按已出库的单位分、可退数量与采购退货、取走全部、在库不够与之后入库补平 | IS01、IS02、RT01、AD02（先进先出） | `issues`、`layers`、`methods` |
 | `issues_integration_test.go` | `returns` | 移动平均的采购退货（层的加权单价、不限数量）、补平更正销售成本、只许采购问可退数量 | RT01、IS02 | `issues` |
+| `queries_integration_test.go` | `queries` | 成本层的读取与来源、先进先出的在库层、层的列表（来源、在库、翻页）、成本事实的列表与触发、读不存在的答 404 | 命令与查询、CF01 | `layers`、`facts`、`sequence` |
+| `queries_integration_test.go` | `recoveryChecks` | 只许恢复工具；计价政策的存在性与版本；停下、为负、久等的范围 | 整套恢复之后、VS05、IS02 | 入口 `checks.go`、`sequence` |
 | `policy_integration_test.go` | `policyInUse` | 有计价过的流水后不能改方法 | PO01 | `policies` |
 
 共用的：

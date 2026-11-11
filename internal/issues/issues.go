@@ -27,7 +27,8 @@ func Issue(m *core.Base, ctx context.Context, tx db.Tx, s *core.Scope, mv core.M
 		return "", err
 	}
 	return cost, facts.Publish(m, ctx, tx, facts.Cost{FactID: core.FactOf(mv.FactID, core.FactValued),
-		LegalEntityID: s.LegalEntityID, MovementID: mv.FactID, Date: mv.BusinessDate, Rule: facts.RuleCostOfSales,
+		LegalEntityID: s.LegalEntityID, ProductID: s.ProductID, MovementID: mv.FactID,
+		Trigger: facts.Trigger{Kind: facts.TriggerMovement, FactID: mv.FactID}, Date: mv.BusinessDate, Rule: facts.RuleCostOfSales,
 		Currency: s.Currency, Amounts: map[string]string{facts.RoleCostOfSales: cost, facts.RoleInventory: cost}})
 }
 
@@ -97,7 +98,8 @@ func Return(m *core.Base, ctx context.Context, tx db.Tx, s *core.Scope, mv core.
 		return "", err
 	}
 	return cost, facts.Publish(m, ctx, tx, facts.Cost{FactID: core.FactOf(mv.FactID, core.FactValued),
-		LegalEntityID: s.LegalEntityID, MovementID: mv.FactID, Date: mv.BusinessDate, Rule: facts.RuleReturn,
+		LegalEntityID: s.LegalEntityID, ProductID: s.ProductID, MovementID: mv.FactID,
+		Trigger: facts.Trigger{Kind: facts.TriggerMovement, FactID: mv.FactID}, Date: mv.BusinessDate, Rule: facts.RuleReturn,
 		Currency: s.Currency, Amounts: map[string]string{facts.RoleGRNI: cost, facts.RoleInventory: cost}})
 }
 
@@ -170,6 +172,7 @@ func Level(m *core.Base, ctx context.Context, tx db.Tx, s *core.Scope, mv core.M
 		rule, amounts = facts.RuleCostReturn, map[string]string{facts.RoleInventory: neg, facts.RoleCostOfSales: neg}
 	}
 	return facts.Publish(m, ctx, tx, facts.Cost{FactID: core.FactOf(mv.FactID, core.FactLevelled),
-		LegalEntityID: s.LegalEntityID, MovementID: mv.FactID, Date: mv.BusinessDate, Rule: rule, Currency: s.Currency,
+		LegalEntityID: s.LegalEntityID, ProductID: s.ProductID, MovementID: mv.FactID,
+		Trigger: facts.Trigger{Kind: facts.TriggerMovement, FactID: mv.FactID}, Date: mv.BusinessDate, Rule: rule, Currency: s.Currency,
 		Amounts: amounts})
 }

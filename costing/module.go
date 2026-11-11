@@ -4,6 +4,8 @@ import (
 	"context"
 
 	core "github.com/brickKit/erp-costing/v3/internal/core"
+	facts "github.com/brickKit/erp-costing/v3/internal/facts"
+	layers "github.com/brickKit/erp-costing/v3/internal/layers"
 	policies "github.com/brickKit/erp-costing/v3/internal/policies"
 	sequence "github.com/brickKit/erp-costing/v3/internal/sequence"
 	sources "github.com/brickKit/erp-costing/v3/internal/sources"
@@ -44,9 +46,9 @@ func (m *Module) Routes(r *httpx.Routes) error {
 	add("PUT", "/api/costing/policies/:legal_entity_id", core.OpPolicyManage, m.http(policies.SetPolicy))           // setPolicy
 	add("GET", "/api/costing/scopes", core.OpValuationRead, m.http(sequence.ListScopes))                            // listScopes
 	add("GET", "/api/costing/scopes/:legal_entity_id/:product_id", core.OpValuationRead, m.http(sequence.GetScope)) // getScope
-	add("GET", "/api/costing/layers", core.OpValuationRead, core.Unsupported("the cost layers"))                    // listLayers
-	add("GET", "/api/costing/layers/:movement_id", core.OpValuationRead, core.Unsupported("the cost layers"))       // getLayer
-	add("GET", "/api/costing/facts", core.OpValuationRead, core.Unsupported("the cost facts"))                      // listFacts
+	add("GET", "/api/costing/layers", core.OpValuationRead, m.http(layers.ListLayers))                              // listLayers
+	add("GET", "/api/costing/layers/:movement_id", core.OpValuationRead, m.http(layers.GetLayer))                   // getLayer
+	add("GET", "/api/costing/facts", core.OpValuationRead, m.http(facts.ListFacts))                                 // listFacts
 	return nil
 }
 

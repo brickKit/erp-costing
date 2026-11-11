@@ -6,6 +6,7 @@ import (
 	"time"
 
 	core "github.com/brickKit/erp-costing/v3/internal/core"
+	layers "github.com/brickKit/erp-costing/v3/internal/layers"
 
 	sdkauthz "github.com/brickKit/be-sdk-go/v3/authz"
 	"github.com/brickKit/be-sdk-go/v3/canon"
@@ -34,10 +35,10 @@ type Scope struct {
 	id string
 }
 
-// Valuation is a scope read alone: FIFO adds its layers in stock (the cost layers' module, P3e).
+// Valuation is a scope read alone: FIFO adds its layers in stock, oldest first.
 type Valuation struct {
 	Scope
-	LayersInStock []any `json:"layers_in_stock"`
+	LayersInStock []layers.Layer `json:"layers_in_stock"`
 }
 
 const cols = `s.id::text, s.legal_entity_id::text, s.product_id::text,
@@ -55,7 +56,7 @@ func scan(row pgx.Row) (Scope, error) {
 		w := canon.Time(*waiting)
 		s.WaitingSince = &w
 	}
-	if core.Cmp(s.Quantity, "0") > 0 {
+	if err == nil && core.Cmp(s.Quantity, "0") > 0 {
 		u := core.Quo(s.Value, s.Quantity)
 		s.UnitCost = &u
 	}
@@ -72,10 +73,14 @@ func GetScope(m *core.Base, c *httpx.Context) error {
 	if err != nil {
 		return err
 	}
-	var s Scope
+	out := Valuation{LayersInStock: []layers.Layer{}}
 	err = m.RT.DB.Tx(ctx, func(ctx context.Context, tx db.Tx) error {
 		var err error
-		s, err = scan(tx.QueryRow(ctx, `SELECT `+cols+` FROM scope s WHERE s.legal_entity_id = $1 AND s.product_id = $2`, le, product))
+		out.Scope, err = scan(tx.QueryRow(ctx, `SELECT `+cols+` FROM scope s WHERE s.legal_entity_id = $1 AND s.product_id = $2`, le, product))
+		if err != nil || out.Method != core.MethodFIFO {
+			return err
+		}
+		out.LayersInStock, err = layers.InStock(ctx, tx, out.id)
 		return err
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -84,7 +89,7 @@ func GetScope(m *core.Base, c *httpx.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(200, Valuation{Scope: s, LayersInStock: []any{}})
+	return c.JSON(200, out)
 }
 
 var scopeList = list.Spec{Operation: core.OpValuationRead, Alias: "s", IDColumn: "id", IDKind: list.UUID,

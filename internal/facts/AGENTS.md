@@ -12,7 +12,8 @@
 | 文件 | 内容 |
 | --- | --- |
 | `facts.go` | `Read` |
-| `cost.go` | `Accounting`（共享契约的形状）、规则键与角色的名字、`Cost`、`Publish` |
+| `cost.go` | `Accounting`（共享契约的形状）、规则键与角色的名字、`Cost`、`Trigger`、`Publish`（同时记下法人、产品、流水、规则、日期与触发，给列表用） |
+| `list.go` | `ListFacts`（路由） |
 
 ## 依赖与被依赖
 
@@ -25,4 +26,4 @@
 
 ## 测试
 
-`itest/sequence_integration_test.go`（入库与出库事实的形状、金额为 0 不发）。
+`itest/sequence_integration_test.go`（入库与出库事实的形状、金额为 0 不发）；`itest/queries_integration_test.go`（列表与触发）。
