@@ -4,15 +4,15 @@ kind: Component
 metadata:
   id: erp/costing
   name: Costing
-  version: 3.0.7
+  version: 3.0.8
   description: "The value of stock (D46): erp/inventory's movements valued in each product and legal entity's valuation sequence (moving average or FIFO), cost layers with their price sources (the policy price, erp/purchase's valuation basis, erp/finance's price confirmation), the adjustments when a source is replaced, and the cost facts by erp/finance's shared accounting fact contract (protocol 05b)"
   repository: https://github.com/brickKit/erp-costing
 
 dependencies:
   components:
-    - mdm/currency@3.0.39
-    - mdm/org@3.0.41
-    - erp/inventory@3.0.46
+    - mdm/currency@3.0.40
+    - mdm/org@3.0.42
+    - erp/inventory@3.0.47
 
 events:
   publishes:
